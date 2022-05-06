@@ -6,12 +6,41 @@ Assignment: Final Project: Project 4
 *************************/
 package main
 
-func main() {
+import (
+	"database/sql"
+	"github.com/xuri/excelize/v2"
+	"log"
+)
 
+func main() {
+	//opens Excel file and gets all data
+	excelFile, err := excelize.OpenFile("games-features.xlsx")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	all_rows, err := excelFile.GetRows("")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	//Excel data function calls
+
+	//database function calls
+
+	//GUI function calls
+}
+
+//creates database
+func OpenDatabase(dbfile string) *sql.DB {
+	database, err := sql.Open("sqlite3", dbfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return database
 }
 
 //creates database table
-func databaseSetup() {
+func tableSetup() {
 
 }
 
