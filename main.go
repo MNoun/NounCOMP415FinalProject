@@ -8,12 +8,21 @@ package main
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
+	"github.com/blizzy78/ebitenui"
+	"github.com/blizzy78/ebitenui/image"
+	"github.com/hajimehoshi/ebiten/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/xuri/excelize/v2"
+	"image/png"
 	"log"
 	"strings"
 )
+
+//go:embed graphics/*
+var EmbeddedAssets embed.FS
+var gameApp GuiApp
 
 func main() {
 	//opens Excel file and gets all data
@@ -26,44 +35,105 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	//Excel data function calls
-	nameRows := getExcelName(all_rows)
-	nameSlice := sanitizeData(nameRows)
+	print(all_rows) //here for no error
 
-	ageRows := getExcelAge(all_rows)
-	ageSlice := sanitizeData(ageRows)
-
-	dlcRows := getExcelDLC(all_rows)
-	dlcSlice := sanitizeData(dlcRows)
-
-	metaRows := getExcelMetacritic(all_rows)
-	metaSlice := sanitizeData(metaRows)
-
-	recCountRows := getExcelRecCount(all_rows)
-	recCountSlice := sanitizeData(recCountRows)
-
-	steamOwnersRows := getExcelSteamOwners(all_rows)
-	steamOwnersSlice := sanitizeData(steamOwnersRows)
-
-	steamPlayersRows := getExcelSteamPlayers(all_rows)
-	steamPlayersSlice := sanitizeData(steamPlayersRows)
-
-	pLinuxRows := getExcelPLinux(all_rows)
-	pLinuxSlice := sanitizeData(pLinuxRows)
-
-	pMacRows := getExcelPMac(all_rows)
-	pMacSlice := sanitizeData(pMacRows)
-
-	pWindowsRows := getExcelPWindows(all_rows)
-	pWindowsSlice := sanitizeData(pWindowsRows)
-
-	//database function calls
-	gameDatabase := OpenDatabase("./games-features.db")
-	tableSetup(gameDatabase)
-	populateDatabase(nameSlice, ageSlice, dlcSlice, metaSlice, recCountSlice, steamOwnersSlice, steamPlayersSlice,
-		pLinuxSlice, pMacSlice, pWindowsSlice, gameDatabase) //run once
+	//Excel data function calls, run once
+	//nameRows := getExcelName(all_rows)
+	//nameSlice := sanitizeData(nameRows)
+	//
+	//ageRows := getExcelAge(all_rows)
+	//ageSlice := sanitizeData(ageRows)
+	//
+	//dlcRows := getExcelDLC(all_rows)
+	//dlcSlice := sanitizeData(dlcRows)
+	//
+	//metaRows := getExcelMetacritic(all_rows)
+	//metaSlice := sanitizeData(metaRows)
+	//
+	//recCountRows := getExcelRecCount(all_rows)
+	//recCountSlice := sanitizeData(recCountRows)
+	//
+	//steamOwnersRows := getExcelSteamOwners(all_rows)
+	//steamOwnersSlice := sanitizeData(steamOwnersRows)
+	//
+	//steamPlayersRows := getExcelSteamPlayers(all_rows)
+	//steamPlayersSlice := sanitizeData(steamPlayersRows)
+	//
+	//pLinuxRows := getExcelPLinux(all_rows)
+	//pLinuxSlice := sanitizeData(pLinuxRows)
+	//
+	//pMacRows := getExcelPMac(all_rows)
+	//pMacSlice := sanitizeData(pMacRows)
+	//
+	//pWindowsRows := getExcelPWindows(all_rows)
+	//pWindowsSlice := sanitizeData(pWindowsRows)
+	//
+	////database function calls
+	//gameDatabase := OpenDatabase("./games-features.db")
+	//tableSetup(gameDatabase) //run once
+	//populateDatabase(nameSlice, ageSlice, dlcSlice, metaSlice, recCountSlice, steamOwnersSlice, steamPlayersSlice,
+	//	pLinuxSlice, pMacSlice, pWindowsSlice, gameDatabase) //run once
 
 	//GUI function calls
+	ebiten.SetWindowSize(900, 800)
+	ebiten.SetWindowTitle("Game Search")
+
+	gameApp = GuiApp{AppUI: MakeUIWindow()}
+
+	err := ebiten.RunGame(&gameApp)
+	if err != nil {
+		log.Fatalln("Error running User Interface Demo", err)
+	}
+
+}
+
+func MakeUIWindow() (GUIhandler *ebitenui.UI) {
+
+	return GUIhandler
+}
+
+func (g GuiApp) Update() error {
+	g.AppUI.Update()
+	return nil
+}
+
+func (g GuiApp) Draw(screen *ebiten.Image) {
+	g.AppUI.Draw(screen)
+}
+
+func (g GuiApp) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return outsideWidth, outsideHeight
+}
+
+type GuiApp struct {
+	AppUI *ebitenui.UI
+}
+
+func loadImageNineSlice(path string, centerWidth int, centerHeight int) (*image.NineSlice, error) {
+	i := loadPNGImageFromEmbedded(path)
+
+	w, h := i.Size()
+	return image.NewNineSlice(i,
+			[3]int{(w - centerWidth) / 2, centerWidth, w - (w-centerWidth)/2 - centerWidth},
+			[3]int{(h - centerHeight) / 2, centerHeight, h - (h-centerHeight)/2 - centerHeight}),
+		nil
+}
+
+func loadPNGImageFromEmbedded(name string) *ebiten.Image {
+	pictNames, err := EmbeddedAssets.ReadDir("graphics")
+	if err != nil {
+		log.Fatal("failed to read embedded dir ", pictNames, " ", err)
+	}
+	embeddedFile, err := EmbeddedAssets.Open("graphics/" + name)
+	if err != nil {
+		log.Fatal("failed to load embedded image ", embeddedFile, err)
+	}
+	rawImage, err := png.Decode(embeddedFile)
+	if err != nil {
+		log.Fatal("failed to load embedded image ", name, err)
+	}
+	gameImage := ebiten.NewImageFromImage(rawImage)
+	return gameImage
 }
 
 //creates database
