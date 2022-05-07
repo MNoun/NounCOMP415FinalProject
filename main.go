@@ -57,6 +57,8 @@ func main() {
 	pWindowsSlice := sanitizeData(pWindowsRows)
 
 	//database function calls
+	gameDatabase := OpenDatabase("games-features.db")
+	tableSetup(gameDatabase)
 
 	//GUI function calls
 }
@@ -71,8 +73,22 @@ func OpenDatabase(dbfile string) *sql.DB {
 }
 
 //creates database table
-func tableSetup() {
-
+func tableSetup(gameDatabase *sql.DB) {
+	createStatement := "CREATE TABLE IF NOT EXISTS GameFeatures(    " +
+		"name TEXT PRIMARY KEY," +
+		"age TEXT NOT NULL," +
+		"dlc TEXT NOT NULL," +
+		"metacritic TEXT NOT NULL," +
+		"recCount TEXT NOT NULL," +
+		"steamOwners TEXT NOT NULL," +
+		"steamPlayers TEXT NOT NULL," +
+		"platformLinux TEXT NOT NULL," +
+		"platformMac TEXT NOT NULL," +
+		"platformWindows TEXT NOT NULL);"
+	_, err := gameDatabase.Exec(createStatement)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 //run once, inserts excel data into database
