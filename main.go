@@ -9,6 +9,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/xuri/excelize/v2"
 	"log"
 	"strings"
@@ -57,7 +58,7 @@ func main() {
 	pWindowsSlice := sanitizeData(pWindowsRows)
 
 	//database function calls
-	gameDatabase := OpenDatabase("games-features.db")
+	gameDatabase := OpenDatabase("./games-features.db")
 	tableSetup(gameDatabase)
 
 	//GUI function calls

@@ -2,7 +2,10 @@ module NounCOMP415FinalProject
 
 go 1.17
 
-require github.com/xuri/excelize/v2 v2.6.0
+require (
+	github.com/mattn/go-sqlite3 v1.14.12
+	github.com/xuri/excelize/v2 v2.6.0
+)
 
 require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
