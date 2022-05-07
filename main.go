@@ -60,6 +60,8 @@ func main() {
 	//database function calls
 	gameDatabase := OpenDatabase("./games-features.db")
 	tableSetup(gameDatabase)
+	populateDatabase(nameSlice, ageSlice, dlcSlice, metaSlice, recCountSlice, steamOwnersSlice, steamPlayersSlice,
+		pLinuxSlice, pMacSlice, pWindowsSlice, gameDatabase) //run once
 
 	//GUI function calls
 }
@@ -93,8 +95,19 @@ func tableSetup(gameDatabase *sql.DB) {
 }
 
 //run once, inserts excel data into database
-func populateDatabase() {
-
+func populateDatabase(nameSlice []string, ageSlice []string, dlcSlice []string, metaSlice []string,
+	recCountSlice []string, steamOwnersSlice []string, steamPlayersSlice []string, pLinuxSlice []string,
+	pMacSlice []string, pWindowsSlice []string, gameDatabase *sql.DB) {
+	insertStatement := "INSERT INTO GameFeatures (name, age, dlc, metacritic, recCount, steamOwners, steamPlayers," +
+		" platformLinux, platformMac, platformWindows) VALUES (?,?,?,?,?,?,?,?,?,?)"
+	for i := 1; i < 13357; i++ {
+		preppedStatement, err := gameDatabase.Prepare(insertStatement)
+		if err != nil {
+			log.Fatal(err)
+		}
+		preppedStatement.Exec(nameSlice[i], ageSlice[i], dlcSlice[i], metaSlice[i], recCountSlice[i],
+			steamOwnersSlice[i], steamPlayersSlice[i], pLinuxSlice[i], pMacSlice[i], pWindowsSlice[i])
+	}
 }
 
 func sanitizeData(s []string) []string {
