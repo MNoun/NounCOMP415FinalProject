@@ -38,7 +38,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	print(all_rows)
+	print(all_rows) //here for no errors
 
 	//Excel data function calls, run once
 	//nameRows := getExcelName(all_rows)
