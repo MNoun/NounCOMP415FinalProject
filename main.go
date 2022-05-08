@@ -12,9 +12,12 @@ import (
 	"fmt"
 	"github.com/blizzy78/ebitenui"
 	"github.com/blizzy78/ebitenui/image"
+	"github.com/blizzy78/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/image/font/basicfont"
+	"image/color"
 	"image/png"
 	"log"
 	"strings"
@@ -35,7 +38,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	print(all_rows) //here for no error
+	print(all_rows)
 
 	//Excel data function calls, run once
 	//nameRows := getExcelName(all_rows)
@@ -80,15 +83,64 @@ func main() {
 
 	gameApp = GuiApp{AppUI: MakeUIWindow()}
 
-	err := ebiten.RunGame(&gameApp)
+	err = ebiten.RunGame(&gameApp)
 	if err != nil {
-		log.Fatalln("Error running User Interface Demo", err)
+		log.Fatalln("Error running User Interface", err)
 	}
 
 }
 
 func MakeUIWindow() (GUIhandler *ebitenui.UI) {
 
+	background := image.NewNineSliceColor(color.Gray16{})
+	rootContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(1),
+			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}),
+			widget.GridLayoutOpts.Padding(widget.Insets{
+				Top:    20,
+				Bottom: 20,
+			}),
+			widget.GridLayoutOpts.Spacing(0, 20))),
+		widget.ContainerOpts.BackgroundImage(background))
+
+	//search game button
+	idle, err := loadImageNineSlice("button-idle.png", 20, 0)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	hover, err := loadImageNineSlice("button-hover.png", 20, 0)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	pressed, err := loadImageNineSlice("button-pressed.png", 20, 0)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	disabled, err := loadImageNineSlice("button-disabled.png", 20, 0)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	buttonImage := &widget.ButtonImage{
+		Idle:     idle,
+		Hover:    hover,
+		Pressed:  pressed,
+		Disabled: disabled,
+	}
+	button := widget.NewButton(
+		widget.ButtonOpts.Image(buttonImage),
+		widget.ButtonOpts.Text("Search Game", basicfont.Face7x13, &widget.ButtonTextColor{
+			Idle: color.RGBA{0xdf, 0xf4, 0xff, 0xff},
+		}),
+		widget.ButtonOpts.TextPadding(widget.Insets{
+			Left:  30,
+			Right: 30,
+		}),
+		widget.ButtonOpts.ClickedHandler(loadGameData),
+	)
+	rootContainer.AddChild(button)
+
+	GUIhandler = &ebitenui.UI{Container: rootContainer}
 	return GUIhandler
 }
 
@@ -134,6 +186,32 @@ func loadPNGImageFromEmbedded(name string) *ebiten.Image {
 	}
 	gameImage := ebiten.NewImageFromImage(rawImage)
 	return gameImage
+}
+
+func searchGame(searchTerm string) string {
+	gameDatabase, err := sql.Open("sqlite3", "games-features.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var gameData string
+	selectStatement := "SELECT * FROM GameFeatures WHERE name = ?"
+	row, err := gameDatabase.Query(selectStatement, searchTerm)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = row.Scan(&gameData)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("Zero rows found")
+		} else {
+			panic(err)
+		}
+	}
+	return gameData
+}
+
+func loadGameData(args *widget.ButtonClickedEventArgs) {
+
 }
 
 //creates database
