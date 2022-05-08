@@ -8,4 +8,4 @@ Description: Takes data from an excel spreadsheet, inserts data into a sqLite3 d
 GUI TODO: 
  - Fix textInput for search
  - Connect textInput to searchGame function
- - Load game data as editbale text, currently normal text
+ - Load game data as editable text, currently normal text
