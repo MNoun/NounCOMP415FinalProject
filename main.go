@@ -38,9 +38,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	print(all_rows) //here for no errors
+	print(all_rows) //here to prevent errors
 
-	//Excel data function calls, run once
+	//Excel data function calls, run once with database function calls
 	//nameRows := getExcelName(all_rows)
 	//nameSlice := sanitizeData(nameRows)
 	//
@@ -71,14 +71,14 @@ func main() {
 	//pWindowsRows := getExcelPWindows(all_rows)
 	//pWindowsSlice := sanitizeData(pWindowsRows)
 	//
-	////database function calls
+	////database function calls, run once to create and populate database, comment out after
 	//gameDatabase := OpenDatabase("./games-features.db")
-	//tableSetup(gameDatabase) //run once
+	//tableSetup(gameDatabase)
 	//populateDatabase(nameSlice, ageSlice, dlcSlice, metaSlice, recCountSlice, steamOwnersSlice, steamPlayersSlice,
 	//	pLinuxSlice, pMacSlice, pWindowsSlice, gameDatabase) //run once
 
 	//GUI function calls
-	ebiten.SetWindowSize(900, 800)
+	ebiten.SetWindowSize(1300, 800)
 	ebiten.SetWindowTitle("Game Search")
 
 	gameApp = GuiApp{AppUI: MakeUIWindow()}
@@ -91,7 +91,7 @@ func main() {
 }
 
 func MakeUIWindow() (GUIhandler *ebitenui.UI) {
-
+	//res := TextInputResources{}
 	background := image.NewNineSliceColor(color.Gray16{})
 	rootContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
@@ -103,6 +103,31 @@ func MakeUIWindow() (GUIhandler *ebitenui.UI) {
 			}),
 			widget.GridLayoutOpts.Spacing(0, 20))),
 		widget.ContainerOpts.BackgroundImage(background))
+
+	//text input isn't working, pointer error?
+	//tOpts := []widget.TextInputOpt{
+	//	widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+	//		Stretch: true,
+	//	})),
+	//	widget.TextInputOpts.Image(res.image),
+	//	widget.TextInputOpts.Color(res.color),
+	//	widget.TextInputOpts.Padding(widget.Insets{
+	//		Left:   13,
+	//		Right:  13,
+	//		Top:    7,
+	//		Bottom: 7,
+	//	}),
+	//	widget.TextInputOpts.Face(res.face),
+	//	widget.TextInputOpts.CaretOpts(
+	//		widget.CaretOpts.Size(res.face, 2),
+	//	),
+	//}
+	//
+	//t := widget.NewTextInput(append(
+	//	tOpts,
+	//	widget.TextInputOpts.Placeholder("Enter name of game"))...,
+	//)
+	//rootContainer.AddChild(t)
 
 	//search game button
 	idle, err := loadImageNineSlice("button-idle.png", 20, 0)
@@ -139,6 +164,19 @@ func MakeUIWindow() (GUIhandler *ebitenui.UI) {
 		widget.ButtonOpts.ClickedHandler(loadGameData),
 	)
 	rootContainer.AddChild(button)
+
+	searchTerm := "Counter-Strike"
+	gameData := searchGame(searchTerm)
+
+	//game data text
+	var textWidget1 *widget.Text
+	var textWidget2 *widget.Text
+	textInfo1 := widget.TextOptions{}.Text("Game Data:", basicfont.Face7x13, color.White)
+	textInfo2 := widget.TextOptions{}.Text(gameData, basicfont.Face7x13, color.White)
+	textWidget1 = widget.NewText(textInfo1)
+	textWidget2 = widget.NewText(textInfo2)
+	rootContainer.AddChild(textWidget1)
+	rootContainer.AddChild(textWidget2)
 
 	GUIhandler = &ebitenui.UI{Container: rootContainer}
 	return GUIhandler
@@ -188,24 +226,32 @@ func loadPNGImageFromEmbedded(name string) *ebiten.Image {
 	return gameImage
 }
 
+//searches database for game with given name, returns string of data
 func searchGame(searchTerm string) string {
 	gameDatabase, err := sql.Open("sqlite3", "games-features.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	var gameData string
+
+	//columns
+	var name, dlc, age, metacritic, recCount, steamOwners, steamPlayers,
+		platformLinux, platformMac, platformWindows string
+
 	selectStatement := "SELECT * FROM GameFeatures WHERE name = ?"
 	row, err := gameDatabase.Query(selectStatement, searchTerm)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = row.Scan(&gameData)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			fmt.Println("Zero rows found")
-		} else {
-			panic(err)
+	for row.Next() {
+		err := row.Scan(&name, &dlc, &age, &metacritic, &recCount, &steamOwners, &steamPlayers,
+			&platformLinux, &platformMac, &platformWindows)
+		if err != nil {
+			log.Fatalln("error reading data from row", err)
 		}
+		gameData = fmt.Sprint("Name: ", name, ", DLCCount: ", dlc, ", Metacritic: ", metacritic, ", RecCount: ",
+			recCount, ", SteamOwners: ", steamOwners, ", SteamPlayers: ", steamPlayers, ", PlatformLinux:",
+			platformLinux, ", PlatformMac: ", platformMac, ", PlatformWindows: ", platformWindows)
 	}
 	return gameData
 }
